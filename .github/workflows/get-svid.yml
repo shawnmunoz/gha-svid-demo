@@ -1,0 +1,28 @@
+name: CI - Get SVID
+
+on:
+  workflow_dispatch:
+  # Same workflow on a pull request. The policy only trusts refs/heads/main,
+  # so PR runs (ref refs/pull/N/merge) are denied.
+  pull_request:
+
+permissions:
+  id-token: write # lets the job request a GitHub OIDC token
+  contents: read
+
+jobs:
+  get-svid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch SVID
+        run: node get-svid.mjs
+        env:
+          DEFAKTO_ATTESTORS: github
+          DEFAKTO_TRUST_DOMAIN_ID: ${{ vars.DEFAKTO_TRUST_DOMAIN_ID }}
+          SVID_AUDIENCE: github-actions-demo

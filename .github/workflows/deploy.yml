@@ -1,0 +1,36 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # "production" has a required reviewer, so GitHub holds this job until
+    # someone approves it. The environment name lands in the OIDC token's
+    # environment claim, which the Defakto policy checks.
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch SVID
+        run: node get-svid.mjs
+        env:
+          DEFAKTO_ATTESTORS: github
+          DEFAKTO_TRUST_DOMAIN_ID: ${{ vars.DEFAKTO_TRUST_DOMAIN_ID }}
+          SVID_AUDIENCE: deploy-target

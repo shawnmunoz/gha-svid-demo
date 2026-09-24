@@ -1,0 +1,28 @@
+# Same repo, same runner, same code as get-svid.yml. The only difference is the
+# workflow file, which is not in the Defakto ServerlessAttestation policy's
+# allowedWorkflowRefs, so the request for an SVID is denied.
+name: Rogue workflow (expected to be denied)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  get-svid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch SVID
+        run: node get-svid.mjs
+        env:
+          DEFAKTO_ATTESTORS: github
+          DEFAKTO_TRUST_DOMAIN_ID: ${{ vars.DEFAKTO_TRUST_DOMAIN_ID }}
+          SVID_AUDIENCE: github-actions-demo
